@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>🎩 Monopoly Negara Dunia — MitsuBot Web</title>
+  <meta name="description" content="Monopoly Negara Dunia Web - MitsuBot Edition. Realtime multiplayer Monopoly dengan 40 petak Negara Dunia!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=Outfit:wght@300;400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/monopoly.css">
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <!-- Ambient Background -->
+  <canvas id="bg-canvas"></canvas>
+  <div id="bg-overlay"></div>
+  <div class="floating-coins" id="floating-coins"></div>
+
+  <!-- Screen: Loading -->
+  <div id="screen-loading" class="screen active">
+    <div class="loading-content">
+      <div class="mono-icon-big">🎩</div>
+      <h1 class="loading-title">MONOPOLY</h1>
+      <p class="loading-sub">Negara Dunia · MitsuBot Web</p>
+      <div class="spinner-ring"><div class="spinner-arc"></div></div>
+    </div>
+  </div>
+
+  <!-- Screen: Error -->
+  <div id="screen-error" class="screen">
+    <div class="error-card">
+      <div style="font-size:3.5rem; margin-bottom:12px;">⚠️</div>
+      <h2 id="error-title">Terjadi Kesalahan</h2>
+      <p id="error-msg" style="color:rgba(255,255,255,0.55); margin-top:8px; font-size:0.9rem;"></p>
+    </div>
+  </div>
+
+  <!-- Screen: Login -->
+  <div id="screen-login" class="screen">
+    <div class="login-card">
+      <div class="login-icon">🎩</div>
+      <h1 class="login-title">Masuk ke Monopoly</h1>
+      <p class="login-sub">Bergabung ke Ruang Monopoly Negara Dunia</p>
+      <div id="discord-preview" class="discord-preview hidden">
+        <img id="discord-avatar-preview" src="" alt="Avatar" class="discord-avatar">
+        <div class="discord-info">
+          <span id="discord-name-preview" class="discord-name"></span>
+          <span class="discord-badge">Discord Profile ✓</span>
+        </div>
+      </div>
+      <input type="text" id="login-name-input" placeholder="Nama Pemainmu..." maxlength="15" class="login-input" autocomplete="off">
+      <button onclick="submitLogin()" class="btn-join" id="btn-login">🎲 Masuk ke Lobby</button>
+    </div>
+  </div>
+
+  <!-- Screen: Lobby -->
+  <div id="screen-lobby" class="screen">
+    <div class="lobby-wrap">
+      <div class="lobby-header">
+        <div class="lobby-logo">
+          <span class="lobby-icon">🎩</span>
+          <div>
+            <h1 class="lobby-game-title">MONOPOLY</h1>
+            <p class="lobby-game-sub">NEGARA DUNIA</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <button class="btn-act btn-roll-dice" onclick="showHowToPlayModal()" style="padding:6px 14px; border-radius:30px; font-weight:700; cursor:pointer; font-size:0.82rem;">📖 Cara Main</button>
+          <div id="lobby-room-badge" class="room-badge"></div>
+        </div>
+      </div>
+
+      <div class="lobby-body">
+        <div class="lobby-section">
+          <div class="lobby-section-header">
+            <h3>👥 Pemain (<span id="lobby-player-count">0</span>/4)</h3>
+            <span class="lobby-hint">Min 2, Max 4 Pemain</span>
+          </div>
+          <div class="lobby-player-grid" id="lobby-player-grid"></div>
+        </div>
+
+        <div class="lobby-section">
+          <div class="lobby-section-header">
+            <h3>🎮 Token Pemain</h3>
+          </div>
+          <div class="token-select-grid" id="token-select-grid">
+            <div class="token-opt" data-token="🚂" onclick="selectToken('🚂')">🚂<span>Kereta</span></div>
+            <div class="token-opt" data-token="⚓" onclick="selectToken('⚓')">⚓<span>Jangkar</span></div>
+            <div class="token-opt" data-token="🎩" onclick="selectToken('🎩')">🎩<span>Topi</span></div>
+            <div class="token-opt" data-token="🐕" onclick="selectToken('🐕')">🐕<span>Anjing</span></div>
+            <div class="token-opt" data-token="🚗" onclick="selectToken('🚗')">🚗<span>Mobil</span></div>
+            <div class="token-opt" data-token="✈️" onclick="selectToken('✈️')">✈️<span>Pesawat</span></div>
+            <div class="token-opt" data-token="🛳️" onclick="selectToken('🛳️')">🛳️<span>Kapal</span></div>
+            <div class="token-opt" data-token="🌍" onclick="selectToken('🌍')">🌍<span>Bumi</span></div>
+          </div>
+          <div class="board-info-grid">
+            <div class="info-tile-sample"><div style="background:#8d6e63; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Asia Tenggara</span></div>
+            <div class="info-tile-sample"><div style="background:#29b6f6; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Asia Tengah</span></div>
+            <div class="info-tile-sample"><div style="background:#ec407a; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Asia Timur</span></div>
+            <div class="info-tile-sample"><div style="background:#ffa726; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Timur Tengah</span></div>
+            <div class="info-tile-sample"><div style="background:#ef5350; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Eropa Selatan</span></div>
+            <div class="info-tile-sample"><div style="background:#ffee58; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Amerika Latin</span></div>
+            <div class="info-tile-sample"><div style="background:#66bb6a; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Eropa Barat</span></div>
+            <div class="info-tile-sample"><div style="background:#5c6bc0; width:100%; height:8px; border-radius:4px; margin-bottom:6px;"></div><span>Asia Timur Jauh</span></div>
+          </div>
+        </div>
+
+        <div class="lobby-section" style="width:100%; margin-top:10px;">
+          <div class="lobby-section-header"><h3>💬 Obrolan Lobi</h3></div>
+          <div class="chat-scroll" id="lobby-chat-scroll" style="height:130px;"></div>
+          <form class="chat-input-wrap" onsubmit="sendChat(event, 'lobby')">
+            <input type="text" id="lobby-chat-input" placeholder="Sapa teman bermain..." maxlength="150" autocomplete="off">
+            <button type="submit" class="btn-send-chat">Kirim</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="lobby-footer" id="lobby-footer"></div>
+    </div>
+  </div>
+
+  <!-- Screen: Game -->
+  <div id="screen-game" class="screen">
+
+    <!-- Mobile Top Bar (mobile only) -->
+    <div class="mobile-top-bar" id="mobile-top-bar">
+      <div class="mtb-room" id="mtb-room"></div>
+      <div class="mtb-turn" id="mtb-turn">Menunggu...</div>
+      <button class="mtb-menu-btn" onclick="openMobilePanel('players')">☰</button>
+    </div>
+
+    <div class="game-layout">
+      <!-- Left Panel (desktop only) -->
+      <aside class="side-panel left-panel" id="left-panel">
+        <div class="panel-logo-small">🎩 <span>MONOPOLY</span></div>
+        <div class="players-header">
+          👥 Pemain <span id="game-player-count">0</span>/4
+          <div class="room-mini-badge" id="room-mini-badge"></div>
+        </div>
+        <div class="players-scroll" id="game-player-list"></div>
+        <div class="sound-toggle-wrap" style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button class="btn-sound" id="btn-sound" style="flex:1;">🔊 Suara: ON</button>
+          <button class="btn-sound" onclick="showHowToPlayModal()" style="flex:1; background:linear-gradient(135deg,#38bdf8,#0284c7); color:#fff; font-weight:700;">📖 Cara Main</button>
+        </div>
+      </aside>
+
+      <!-- Center: Board -->
+      <main class="board-area">
+        <div class="board-outer" id="board-outer">
+          <div class="monopoly-board" id="monopoly-board">
+            <!-- Tiles injected by JS -->
+            <!-- Token overlay: inside board so coordinate system matches -->
+            <div class="board-token-overlay" id="board-token-overlay"></div>
+            <div class="board-center-area" id="board-center-area">
+              <div class="center-logo-area">
+                <div class="center-logo-text">MONOPOLY</div>
+                <div class="center-logo-sub">🌍 NEGARA DUNIA 🌍</div>
+              </div>
+
+              <!-- Dice Zone -->
+              <div class="dice-zone" id="dice-zone">
+                <div class="dice-wrap">
+                  <div class="die-wrap">
+                    <div class="die" id="dice1"></div>
+                  </div>
+                  <div class="die-wrap">
+                    <div class="die" id="dice2"></div>
+                  </div>
+                </div>
+                <div class="doubles-banner" id="doubles-banner">⚡ DOUBLES!</div>
+              </div>
+
+              <div class="turn-zone desktop-turn-zone">
+                <div class="turn-label-text">Giliran Saat Ini</div>
+                <div class="turn-name" id="turn-name">Menunggu Mulai...</div>
+                <div class="turn-actions" id="turn-actions"></div>
+              </div>
+
+              <div class="log-zone desktop-log-zone">
+                <div class="log-zone-title">📜 Activity Log</div>
+                <div class="log-zone-scroll" id="log-scroll"></div>
+              </div>
+            </div>
+        </div>
+      </main>
+
+      <!-- Right Panel (desktop only) -->
+      <aside class="side-panel right-panel">
+        <div class="mobile-turn-box" id="mobile-turn-box">
+          <div class="turn-label-text">Giliran Saat Ini</div>
+          <div class="turn-name" id="turn-name-mobile">Menunggu Mulai...</div>
+          <div class="turn-actions" id="turn-actions-mobile"></div>
+        </div>
+
+        <div class="panel-section-title">🏛️ Info Petak</div>
+        <div class="tile-detail-box" id="tile-detail-box">
+          <p class="tile-detail-hint">Klik petak di papan untuk melihat harga dan tarif sewa.</p>
+        </div>
+
+        <div class="panel-section-title" style="margin-top:16px;">🗺️ Aset Dimiliki</div>
+        <div class="my-props-list" id="my-props-list" style="max-height:160px; overflow-y:auto;">
+          <p class="tile-detail-hint">Belum ada aset dimiliki.</p>
+        </div>
+
+        <div class="mobile-log-box" id="mobile-log-box" style="margin-top:16px;">
+          <div class="panel-section-title">📜 Activity Log</div>
+          <div class="log-zone-scroll" id="log-scroll-mobile" style="max-height:150px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="chat-game-box" style="margin-top:16px;">
+          <div class="panel-section-title">💬 Global Chat</div>
+          <div class="chat-scroll" id="game-chat-scroll" style="height:140px;"></div>
+          <form class="chat-input-wrap" onsubmit="sendChat(event, 'game')">
+            <input type="text" id="game-chat-input" placeholder="Ketik obrolan..." maxlength="150" autocomplete="off">
+            <button type="submit" class="btn-send-chat">Kirim</button>
+          </form>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Mobile Floating Action Dock -->
+    <div class="mobile-action-dock" id="mobile-action-dock">
+      <div class="dock-top-row">
+        <div class="dock-player-info">
+          <div class="dock-my-money" id="dock-my-money">$1500</div>
+          <div class="dock-turn-name" id="dock-turn-name">Menunggu...</div>
+        </div>
+        <div class="dock-panel-btns">
+          <button class="dock-panel-btn" onclick="openMobilePanel('tile')" title="Info Petak">📍</button>
+          <button class="dock-panel-btn" onclick="openMobilePanel('players')" title="Buka Panel">📋</button>
+        </div>
+      </div>
+      <div class="dock-actions" id="dock-actions"></div>
+    </div>
+
+    <!-- Mobile Panel Overlay -->
+    <div class="mobile-panel-overlay" id="mobile-panel-overlay" onclick="closeMobilePanel()"></div>
+
+    <!-- Mobile Slide Panel -->
+    <div class="mobile-slide-panel" id="mobile-slide-panel">
+      <div class="msp-header">
+        <div class="msp-tabs">
+          <button class="msp-tab active" id="msp-tab-players" onclick="switchMobileTab('players')">👥 Pemain</button>
+          <button class="msp-tab" id="msp-tab-tile"    onclick="switchMobileTab('tile')">📍 Petak</button>
+          <button class="msp-tab" id="msp-tab-assets"  onclick="switchMobileTab('assets')">🏛️ Aset</button>
+          <button class="msp-tab" id="msp-tab-log"     onclick="switchMobileTab('log')">📜 Log</button>
+          <button class="msp-tab" id="msp-tab-chat"    onclick="switchMobileTab('chat')">💬 Chat</button>
+        </div>
+        <button class="msp-close" onclick="closeMobilePanel()">✕</button>
+      </div>
+      <div class="msp-content">
+        <div class="msp-panel" id="msp-panel-players">
+          <div id="msp-player-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div class="msp-panel hidden" id="msp-panel-tile">
+          <div class="tile-detail-box" id="tile-detail-box-msp">
+            <p class="tile-detail-hint">Klik petak di papan untuk melihat harga, tarif sewa, dan opsi bangun rumah.</p>
+          </div>
+        </div>
+        <div class="msp-panel hidden" id="msp-panel-assets">
+          <div id="msp-assets-list"></div>
+        </div>
+        <div class="msp-panel hidden" id="msp-panel-log">
+          <div class="log-zone-scroll" id="log-scroll-msp" style="max-height:400px;"></div>
+        </div>
+        <div class="msp-panel hidden" id="msp-panel-chat">
+          <div class="chat-scroll" id="msp-chat-scroll" style="height:340px;"></div>
+          <form class="chat-input-wrap" onsubmit="sendChat(event, 'msp')" style="margin-top:10px;">
+            <input type="text" id="msp-chat-input" placeholder="Ketik obrolan..." maxlength="150" autocomplete="off">
+            <button type="submit" class="btn-send-chat">Kirim</button>
+          </form>
+        </div>
+      </div>
+      <div class="msp-actions">
+        <button class="btn-sound" id="msp-sound-btn" onclick="toggleSoundMSP()">🔊 Suara: ON</button>
+        <button class="btn-sound" onclick="showHowToPlayModal(); closeMobilePanel();" style="background:linear-gradient(135deg,#38bdf8,#0284c7); color:#fff; font-weight:700;">📖 Cara Main</button>
+      </div>
+    </div>
+
+  </div><!-- /screen-game -->
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box" id="modal-box"></div>
+  </div>
+
+  <!-- Announcement Banner -->
+  <div class="ann-banner" id="ann-banner"></div>
+
+  <!-- Global screen flash (for jail/doubles effects) -->
+  <div id="screen-flash" class="screen-flash"></div>
+
+  <script src="/monopoly.js"></script>
+</body>
+</html>

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐺 Werewolf — MitsuBot Web</title>
+    <meta name="description" content="Werewolf game web version — MitsuBot Edition. Bergabung dan main bareng teman!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body class="phase-lobby">
+    <!-- ─── Ambient Background ─── -->
+    <div id="bg-overlay"></div>
+    <canvas id="particle-canvas"></canvas>
+    <div class="stars" id="stars"></div>
+    <div class="fog-layer" id="fog"></div>
+    <div class="moon" id="moon"><div class="moon-glow"></div></div>
+    <div class="sun" id="sun"><div class="sun-rays"></div></div>
+
+    <!-- ─── Loading Screen ─── -->
+    <div id="screen-loading" class="screen active">
+        <div class="loading-content">
+            <div class="wolf-icon">🐺</div>
+            <h1>Werewolf</h1>
+            <p class="loading-sub">MitsuBot Web Edition</p>
+            <div class="spinner-ring">
+                <div class="spinner-arc"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Error Screen ─── -->
+    <div id="screen-error" class="screen">
+        <div class="error-content">
+            <div class="error-icon">⚠️</div>
+            <h2 id="error-title">Error</h2>
+            <p id="error-msg">Terjadi kesalahan.</p>
+        </div>
+    </div>
+
+    <!-- ─── Login Screen ─── -->
+    <div id="screen-login" class="screen">
+        <div class="login-box">
+            <div class="login-wolf">🐺</div>
+            <h1 class="login-title">Masuk ke Game</h1>
+            <p class="login-sub">Masukkan namamu untuk bergabung ke dalam game Werewolf.</p>
+            <input type="text" id="login-name-input" placeholder="Nama Pemain..." maxlength="15" class="login-input">
+            <button onclick="submitLogin()" class="btn-primary" id="btn-login">🐾 Masuk ke Lobby</button>
+        </div>
+    </div>
+
+    <!-- ─── Lobby Screen ─── -->
+    <div id="screen-lobby" class="screen">
+        <div class="lobby-container">
+            <div class="lobby-header">
+                <div class="game-logo">
+                    <span class="logo-wolf">🐺</span>
+                    <span class="logo-text">WEREWOLF</span>
+                </div>
+                <p class="lobby-subtitle">MitsuBot Web Edition</p>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button class="btn-primary" onclick="showHowToPlayModal()" title="Cara Main & Aturan 📖" style="padding:6px 14px; border-radius:30px; font-weight:700; cursor:pointer; font-size:0.82rem; background:linear-gradient(135deg,#6366f1,#a855f7);">📖 Cara Main</button>
+                    <div id="session-badge" class="session-badge"></div>
+                </div>
+            </div>
+
+            <div class="lobby-body">
+                <!-- Players Panel -->
+                <div class="lobby-panel">
+                    <h3>👥 Pemain (<span id="player-count">0</span>/20)</h3>
+                    <div id="player-list" class="player-grid"></div>
+                </div>
+
+                <!-- Role Settings Panel (Host Only) -->
+                <div class="lobby-panel" id="role-settings-panel">
+                    <div class="panel-header-row">
+                        <h3 style="margin: 0;">🛠️ Pengaturan Role</h3>
+                        <button id="btn-toggle-mode" onclick="toggleGameMode()" class="btn-mode">Mode: Manual</button>
+                    </div>
+                    
+                    <div class="role-settings-grid" id="role-settings-grid"></div>
+                    
+                    <div class="role-settings-grid" id="random-settings-grid" style="display: none;">
+                        <div class="role-set-item">
+                            <div class="rsi-info">
+                                <div class="rsi-emoji">🐺</div>
+                                <div class="rsi-name">Random WW</div>
+                            </div>
+                            <div class="rsi-controls">
+                                <button onclick="updateRandomSetting('ww', -1)">−</button>
+                                <span id="rand-ww-count">1</span>
+                                <button onclick="updateRandomSetting('ww', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="role-set-item">
+                            <div class="rsi-info">
+                                <div class="rsi-emoji">❓</div>
+                                <div class="rsi-name">Random Warga Spesial</div>
+                            </div>
+                            <div class="rsi-controls">
+                                <button onclick="updateRandomSetting('special', -1)">−</button>
+                                <span id="rand-special-count">0</span>
+                                <button onclick="updateRandomSetting('special', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="role-set-item">
+                            <div class="rsi-info">
+                                <div class="rsi-emoji">🎭</div>
+                                <div class="rsi-name">Random Solo</div>
+                            </div>
+                            <div class="rsi-controls">
+                                <button onclick="updateRandomSetting('solo', -1)">−</button>
+                                <span id="rand-solo-count">0</span>
+                                <button onclick="updateRandomSetting('solo', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="role-total">
+                        Total Role Spesial: <span id="role-total-count">0</span> / <span id="player-total">0</span>
+                    </div>
+                </div>
+
+                <!-- Lobby Chat Panel -->
+                <div class="lobby-panel" id="lobby-chat-panel">
+                    <h3 style="margin-bottom: 10px;">💬 Obrolan Lobby</h3>
+                    <div id="lobby-chat-log" class="chat-log" style="height: 180px; margin-bottom: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px;"></div>
+                    <div class="chat-input-row">
+                        <input id="lobby-chat-input" type="text" placeholder="Ketik pesan..." maxlength="200" onkeypress="if(event.key==='Enter') sendLobbyChat()" />
+                        <button onclick="sendLobbyChat()">→</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lobby-actions">
+                <button id="btn-start" class="btn-primary" onclick="startGame()">
+                    🐺 Mulai Game
+                </button>
+                <button id="btn-leave" class="btn-secondary" onclick="leaveGame()" style="display: none;">
+                    🚪 Keluar
+                </button>
+                <button id="btn-close-session" class="btn-danger" onclick="closeSession()" style="display: none;">
+                    🛑 Tutup Session
+                </button>
+                <div class="lobby-tip">Host mengatur role dan memulai game. Minimal 4 pemain.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Game Screen ─── -->
+    <div id="screen-game" class="screen">
+        <!-- Phase Banner -->
+        <div id="phase-banner" class="phase-banner">
+            <div class="phase-icon-wrap">
+                <div class="phase-icon" id="phase-icon">🌙</div>
+            </div>
+            <div class="phase-info">
+                <div id="phase-title" class="phase-title">Malam ke-1</div>
+                <div id="phase-subtitle" class="phase-subtitle">Fase sedang berganti...</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <button onclick="showHowToPlayModal()" title="Cara Main & Aturan 📖" style="padding:6px 12px; border-radius:30px; font-weight:700; cursor:pointer; font-size:0.78rem; background:linear-gradient(135deg,#6366f1,#a855f7); color:#fff; border:none;">📖 Cara Main</button>
+                <div class="timer-ring" id="timer-ring">
+                    <svg viewBox="0 0 44 44">
+                        <circle class="timer-bg" cx="22" cy="22" r="18"/>
+                        <circle class="timer-fill" id="timer-fill" cx="22" cy="22" r="18"/>
+                    </svg>
+                    <span id="timer-text" class="timer-text">--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Circle (Arena) -->
+        <div id="arena" class="arena">
+            <div id="player-cards" class="player-cards-container"></div>
+        </div>
+
+        <!-- Bottom HUD -->
+        <div id="hud" class="hud">
+            <!-- Role Info -->
+            <div id="my-role-card" class="my-role-card" onclick="toggleRoleInfo()">
+                <span id="my-role-emoji" class="my-role-emoji">❓</span>
+                <div class="my-role-info">
+                    <div id="my-role-name" class="my-role-name">?????</div>
+                    <div id="my-role-team" class="my-role-team">---</div>
+                </div>
+                <!-- Role Info Popup -->
+                <div id="role-info-popup" class="role-info-popup" style="display:none;" onclick="event.stopPropagation()">
+                    <h4 id="rip-title">Werewolf</h4>
+                    <p><strong>📖 Deskripsi:</strong> <br><span id="rip-desc">...</span></p>
+                    <p><strong>✨ Kemampuan:</strong> <br><span id="rip-abil">...</span></p>
+                    <p><strong>🏆 Kondisi Menang:</strong> <br><span id="rip-win">...</span></p>
+                </div>
+            </div>
+
+            <!-- Action Area -->
+            <div id="action-area" class="action-area">
+                <div id="action-message" class="action-message">Menunggu...</div>
+                <div id="action-buttons" class="action-buttons"></div>
+            </div>
+
+            <!-- Chat Area (WW Night / General Day) -->
+            <div id="chat-area" class="chat-area" style="display:none">
+                <div class="chat-mobile-toggle" onclick="toggleMobileChat(event)">
+                    <span>💬 Obrolan <span id="chat-unread-dot" class="chat-unread-dot" style="display:none">🔴</span></span>
+                    <span id="chat-toggle-icon">▼</span>
+                </div>
+                <div id="chat-mobile-collapse" class="chat-mobile-collapse">
+                    <div id="chat-log" class="chat-log"></div>
+                    <div class="chat-input-row">
+                        <button id="sect-chat-btn" onclick="toggleSectChatMode()" class="sect-chat-btn" style="display:none; padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); cursor: pointer;" title="Toggle Chat Sekte">💬</button>
+                        <input id="chat-input" type="text" placeholder="Kirim pesan..." maxlength="200" />
+                        <button onclick="sendChat()">→</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcement Overlay -->
+        <div id="announcement-overlay" class="announcement-overlay" style="display:none">
+            <div id="announcement-card" class="announcement-card"></div>
+            <!-- Particle effect container inside overlay -->
+            <div id="ann-particles" class="ann-particles"></div>
+        </div>
+
+        <!-- Vote Tally -->
+        <div id="vote-tally" class="vote-tally" style="display:none">
+            <h4>🗳️ Tally Vote</h4>
+            <div id="vote-tally-list"></div>
+        </div>
+
+        <!-- Screen Flash Layer -->
+        <div id="screen-flash" class="screen-flash"></div>
+
+        <!-- History Panel -->
+        <div id="history-panel" class="history-panel">
+            <div class="history-header">
+                <span>📜 Riwayat</span>
+                <span id="history-badge" class="history-badge" style="display:none">0</span>
+                <button class="history-close" onclick="document.getElementById('history-panel').classList.toggle('open')" title="Toggle Riwayat">✕</button>
+            </div>
+            <div id="history-list" class="history-list"></div>
+        </div>
+        <button id="history-toggle-btn" class="history-toggle-btn" onclick="toggleHistory()" title="Lihat Riwayat">
+            📜
+            <span id="history-badge-mini" class="history-badge-mini" style="display:none">0</span>
+        </button>
+    </div>
+
+    <!-- ─── Role Reveal Overlay ─── -->
+    <div id="role-reveal-overlay" class="role-reveal-overlay" style="display:none">
+        <div class="role-reveal-content">
+            <div class="role-reveal-label">Peran Kamu</div>
+            <div id="gacha-container" class="gacha-container">
+                <div id="gacha-reel" class="gacha-reel"></div>
+            </div>
+            <div class="role-reveal-card" id="role-reveal-card" style="display:none;">
+                <div class="role-card-front">
+                    <div class="role-card-question">?</div>
+                </div>
+                <div class="role-card-back" id="role-card-back">
+                    <div class="role-card-emoji" id="reveal-emoji">❓</div>
+                    <div class="role-card-name" id="reveal-name">???</div>
+                    <div class="role-card-team" id="reveal-team">---</div>
+                    <div class="role-card-allies" id="reveal-allies"></div>
+                </div>
+            </div>
+            <p class="role-reveal-hint">Tap untuk tutup</p>
+        </div>
+    </div>
+
+    <!-- ─── How To Play Modal ─── -->
+    <div id="how-to-play-overlay" class="role-reveal-overlay" style="display:none; z-index:9999;">
+        <div class="role-reveal-content" style="max-width:560px; background:#1e1e2f; border:2px solid #6366f1; border-radius:16px; padding:20px; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:10px; margin-bottom:12px;">
+                <h2 style="margin:0; font-size:1.3rem; color:#a855f7;">📖 Cara Main Werewolf Web</h2>
+                <button onclick="document.getElementById('how-to-play-overlay').style.display='none'" style="background:none; border:none; color:#fff; font-size:1.5rem; cursor:pointer;">✕</button>
+            </div>
+            <div style="font-size:0.9rem; line-height:1.6; color:#e2e8f0; max-height:65vh; overflow-y:auto; padding-right:8px;">
+                <b style="color:#f59e0b;">🌞 Fase Siang (Day Phase):</b><br>
+                • Semua pemain berdiskusi di kolom chat untuk mencari tahu siapa Werewolf di antara kalian.<br>
+                • Pada fase pemungutan suara (Voting), klik tombol <b>🗳️ Vote</b> pada kartu pemain yang mencurigakan.<br>
+                • Pemain dengan suara terbanyak akan dieksekusi (Gantung)!<br><br>
+                <b style="color:#6366f1;">🌙 Fase Malam (Night Phase):</b><br>
+                • Warga biasa tertidur lelap. Pemain dengan peran khusus (Werewolf, Seer, Guardian, dll.) terbangun.<br>
+                • Jika kamu punya kemampuan malam (misal Seer terawang, Werewolf membunuh), tombol aksi akan muncul pada kartu pemain lawan. Klik untuk menggunakan kemampuanmu sebelum waktu habis!<br><br>
+                <b style="color:#10b981;">💡 Tips Penting:</b><br>
+                • Perhatikan peran rahasiamu di kartu sendiri. Jangan sembarangan membocorkan peranmu kepada musuh!<br>
+                • Cek riwayat kejadian di tombol <b>📜 Riwayat</b> untuk melacak jejak pembunuhan & voting.
+            </div>
+            <div style="margin-top:16px; text-align:center;">
+                <button onclick="document.getElementById('how-to-play-overlay').style.display='none'" style="background:linear-gradient(135deg,#6366f1,#a855f7); color:#fff; border:none; padding:10px 24px; border-radius:30px; font-weight:700; cursor:pointer; width:100%;">✓ Mengerti & Lanjut Main</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── Win Screen ─── -->
+    <div id="screen-win" class="screen">
+        <canvas id="win-canvas" class="win-canvas"></canvas>
+        <div class="win-content">
+            <div id="win-emoji" class="win-emoji">🏆</div>
+            <h1 id="win-title">Village Menang!</h1>
+            <p id="win-reason">Semua Werewolf telah dieliminasi!</p>
+            <div id="final-players" class="final-players"></div>
+        </div>
+    </div>
+    <!-- ─── Developer Creative Mode Panel ─── -->
+    <div id="dev-panel" class="dev-panel" style="display:none;">
+        <div class="dev-header">
+            <span>⚙️ Creative Mode</span>
+            <button onclick="document.getElementById('dev-panel').style.display='none'">✕</button>
+        </div>
+        <div class="dev-content">
+            <div class="dev-section">
+                <h4>Spawn Dummy</h4>
+                <button onclick="spawnDummy()">Spawn Dummy Card</button>
+                <button onclick="clearDummies()">Clear Dummies</button>
+            </div>
+            <div class="dev-section">
+                <h4>Test Animations (on Dummies)</h4>
+                <div class="dev-btn-group">
+                    <button onclick="testAnim('ww')">🐺 Claw</button>
+                    <button onclick="testAnim('slash')">🔪 Slash</button>
+                    <button onclick="testAnim('shoot')">💥 Shoot</button>
+                    <button onclick="testJailed()">🔒 Toggle Jail Bars</button>
+                    <button onclick="testRedMoon()">🩸 Red Moon</button>
+                    <button onclick="testNwSleep()">😴 Toggle Sleep Fog</button>
+                    <button onclick="testAnim('arson')">🔥 Burn</button>
+                    <button onclick="testAnim('bomb')">💣 Bomb</button>
+                    <button onclick="testAnim('holy_water')">💦 Splash</button>
+                    <button onclick="testAnim('lightning')">⚡ Lightning</button>
+                    <button onclick="testAnim('heart')">💔 Heart</button>
+                    <button onclick="testAnim('glitch')">👾 Glitch</button>
+                    <button onclick="testAnim('hakim')">⚖️ Hakim Target</button>
+                    <button onclick="testAnim('hakim_suicide')">⚠️ Hakim Suicide</button>
+                    <button onclick="testAnim('meteor')">☄️ Meteor</button>
+                    <button onclick="testAnim('meteor_backfire')">🔮 Meteor Backfire</button>
+                    <button onclick="testAnim('vote')">🗡️ Guillotine</button>
+                    <button onclick="testAnim('injury')">🩸 Bleeding</button>
+                    <button onclick="testRevive()">✨ Medium Revive</button>
+                    <button onclick="testGacha()">🎰 Gacha Reveal</button>
+                    <button onclick="testMVP()">⭐ Test MVP Screen</button>
+                    <button onclick="testSeerAnim()">🔮 Test Seer Vision</button>
+                    <button onclick="testWolfSeerAnim()">🐺 Test Wolf Seer Vision</button>
+                    <button onclick="testPuppet()">🧵 Toggle Wolffluencer Puppet</button>
+                    <button onclick="testDetAnim()">🕵️ Test Det Suspects</button>
+                    <button onclick="testAnim('sect_sacrifice_member')">🔮 Test Sect Sacrifice</button>
+                    <button onclick="testAnim('sect_ritual')">🗡️ Test Sect Ritual Circle</button>
+                    <button onclick="testAnim('sect_cascade')">💀 Test Sect Cascade</button>
+                </div>
+            </div>
+            <div class="dev-section">
+                <h4>Test Sounds</h4>
+                <div class="dev-btn-group">
+                    <button onclick="playSoundtrack('Night_Fool.mp3')">🃏 Fool</button>
+                    <button onclick="playSoundtrack('Night_Arson.mp3')">🔥 Arson</button>
+                    <button onclick="playSoundtrack('Night_Cor.mp3')">🖥️ Corruptor</button>
+                    <button onclick="playSoundtrack('Night_SS.mp3')">🎭 SS</button>
+                    <button onclick="playSoundtrack('Night_HH.mp3')">🎯 HH</button>
+                    <button onclick="playSoundtrack('Village_Win.mp3', false)">🏆 Win Vill</button>
+                    <button onclick="playSoundtrack('Werewolfs_Win.mp3', false)">🏆 Win WW</button>
+                </div>
+            </div>
+            <div class="dev-section">
+                <h4>Test Overlay / Phase</h4>
+                <button onclick="queueAnnouncement({type:'info', text:'Ini adalah test banner!'})">Test Banner</button>
+                <button onclick="setPhaseTheme('night')">Night Theme</button>
+                <button onclick="setPhaseTheme('day')">Day Theme</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/deathFX.js"></script>
+    <script src="/game.js"></script>
+</body>
+</html>

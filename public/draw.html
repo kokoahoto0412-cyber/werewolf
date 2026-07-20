@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎨 Draw & Guess — MitsuBot Web</title>
+    <meta name="description" content="Draw & Guess Multiplayer Real-Time ala Gartic. Main tebak gambar seru bareng teman di browser!">
+    <link rel="stylesheet" href="/draw.css">
+</head>
+<body>
+    <!-- ─── Ambient BG ─── -->
+    <div id="bg-overlay"></div>
+    <div class="floating-art" id="floating-art"></div>
+
+    <!-- ─── SCREEN 1: LOGIN ─── -->
+    <div id="screen-login" class="screen active">
+        <div class="login-card">
+            <span class="login-icon">🎨</span>
+            <h1 class="login-title">DRAW & GUESS</h1>
+            <p class="login-sub">REAL-TIME MULTIPLAYER CANVAS</p>
+            <div class="form-group">
+                <label for="login-name">Nama / Nickname Kamu</label>
+                <input type="text" class="login-input" id="login-name" placeholder="Masukkan nama kamu..." maxlength="16" autocomplete="off">
+            </div>
+            <button class="btn-join-draw" id="btn-login-join">Masuk ke Ruangan 🚀</button>
+        </div>
+    </div>
+
+    <!-- ─── SCREEN 2: LOBBY ─── -->
+    <div id="screen-lobby" class="screen">
+        <div class="lobby-wrap">
+            <!-- Header -->
+            <div class="lobby-header">
+                <div class="lobby-logo">
+                    <span class="lobby-icon">🎨</span>
+                    <div>
+                        <div class="lobby-game-title">DRAW & GUESS</div>
+                        <div class="lobby-game-sub">REAL-TIME CANVAS MULTIPLAYER</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <button class="btn-how-to-play" onclick="showHowToPlayModal()" title="Cara Main & Aturan 📖" style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff; border:none; padding:6px 14px; border-radius:30px; font-weight:700; cursor:pointer; font-size:0.82rem;">📖 Cara Main</button>
+                    <span class="room-id-badge" id="lobby-room-id">ROOM: ...</span>
+                </div>
+            </div>
+
+            <!-- Body: 2 Columns -->
+            <div class="lobby-body">
+                <!-- LEFT: Player List -->
+                <div class="lobby-section">
+                    <div class="lobby-section-header">
+                        <h3>👥 Pemain di Ruangan</h3>
+                        <span class="player-count-badge" id="lobby-player-count">0 / 10</span>
+                    </div>
+                    <div class="lobby-player-grid" id="lobby-players-list"></div>
+                </div>
+
+                <!-- RIGHT: Category + Rules -->
+                <div class="lobby-section">
+                    <div class="lobby-section-header">
+                        <h3>📚 Kategori Kata</h3>
+                    </div>
+                    <div class="category-select-wrap" id="category-wrap">
+                        <div class="category-grid" id="category-grid"></div>
+                    </div>
+                    <div style="height: 20px;"></div>
+                    <div class="lobby-section-header" style="border-top:1px solid var(--border); padding-top:16px; margin-top:4px;">
+                        <h3>📖 Aturan Main</h3>
+                    </div>
+                    <div class="rules-list">
+                        <div class="rule-item"><span class="rule-icon">👥</span><span>Minimal <b>3</b> pemain, Maksimal <b>10</b> pemain</span></div>
+                        <div class="rule-item"><span class="rule-icon">🔄</span><span>Setiap pemain bergantian menggambar</span></div>
+                        <div class="rule-item"><span class="rule-icon">🏆</span><span>3 Ronde penuh per sesi game</span></div>
+                        <div class="rule-item"><span class="rule-icon">⚡</span><span>Menebak lebih cepat = lebih banyak poin!</span></div>
+                        <div class="rule-item"><span class="rule-icon">🎁</span><span>Penggambar dapat <b>+5 Poin</b> tiap yang menebak benar</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Footer -->
+            <div class="lobby-actions-row">
+                <div class="action-group">
+                    <button class="btn-leave-lobby player-only" id="btn-lobby-leave">🚪 Keluar</button>
+                    <button class="btn-end-session host-only" id="btn-lobby-end" style="display:none;">🛑 Bubarkan Sesi</button>
+                </div>
+                <button class="btn-start-draw host-only" id="btn-lobby-start" style="display:none;" disabled>🎮 Mulai Permainan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── CHOOSING WORD MODAL ─── -->
+    <div id="modal-choosing" class="modal-overlay">
+        <div class="modal-card">
+            <span class="modal-icon" id="modal-icon">⏳</span>
+            <div class="modal-title" id="modal-title">MEMILIH KATA</div>
+            <p class="modal-desc" id="choosing-desc">Menunggu penggambar memilih kata...</p>
+            <div class="word-choices-group" id="word-choices-container"></div>
+        </div>
+    </div>
+
+    <!-- ─── SCREEN 3: GAME ARENA ─── -->
+    <div id="screen-game" class="screen">
+        <div class="game-wrap">
+            <!-- Topbar -->
+            <div class="game-topbar">
+                <div class="topbar-left">
+                    <span class="round-pill" id="game-round-badge">Ronde 1 / 3</span>
+                    <div class="drawer-pill">
+                        🖌️ <span id="game-drawer-name">Penggambar</span>
+                    </div>
+                </div>
+                <div class="topbar-center">
+                    <div class="hint-display" id="game-hint-box">_ _ _ _ _</div>
+                </div>
+                <div class="topbar-right" style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn-how-to-play" onclick="showHowToPlayModal()" title="Cara Main & Aturan 📖" style="background:linear-gradient(135deg, #a855f7, #6366f1); color:#fff; border:none; padding:5px 12px; border-radius:30px; font-weight:700; cursor:pointer; font-size:0.78rem;">📖 Cara Main</button>
+                    <div class="timer-pill" id="game-timer">80s</div>
+                </div>
+            </div>
+
+            <!-- Main Layout -->
+            <div class="game-main-layout">
+                <!-- Canvas Column -->
+                <div class="canvas-column">
+                    <div class="canvas-wrapper" id="canvas-wrapper">
+                        <canvas id="draw-canvas" width="900" height="600"></canvas>
+                    </div>
+
+                    <!-- Drawing Toolbar (only for drawer) -->
+                    <div class="draw-toolbar" id="draw-toolbar" style="visibility:hidden;">
+                        <!-- Color wheel -->
+                        <div class="toolbar-section">
+                            <div class="color-wheel-wrap" title="Roda Warna">
+                                <input type="color" id="color-wheel" value="#ec4899">
+                            </div>
+                            <div class="color-preview" id="color-preview" style="background:#ec4899;" title="Warna Aktif"></div>
+                        </div>
+                        <!-- Swatches -->
+                        <div class="toolbar-section">
+                            <div class="palette-swatches">
+                                <button class="swatch" style="background:#000000;" data-color="#000000"></button>
+                                <button class="swatch" style="background:#ffffff; border:1px solid #ccc;" data-color="#ffffff"></button>
+                                <button class="swatch" style="background:#ef4444;" data-color="#ef4444"></button>
+                                <button class="swatch" style="background:#f97316;" data-color="#f97316"></button>
+                                <button class="swatch" style="background:#eab308;" data-color="#eab308"></button>
+                                <button class="swatch" style="background:#22c55e;" data-color="#22c55e"></button>
+                                <button class="swatch" style="background:#06b6d4;" data-color="#06b6d4"></button>
+                                <button class="swatch" style="background:#3b82f6;" data-color="#3b82f6"></button>
+                                <button class="swatch" style="background:#a855f7;" data-color="#a855f7"></button>
+                                <button class="swatch active-swatch" style="background:#ec4899;" data-color="#ec4899"></button>
+                                <button class="swatch" style="background:#6b7280;" data-color="#6b7280"></button>
+                                <button class="swatch" style="background:#7f1d1d;" data-color="#7f1d1d"></button>
+                            </div>
+                        </div>
+                        <div class="toolbar-divider"></div>
+                        <!-- Tools -->
+                        <div class="toolbar-section">
+                            <button class="tool-btn active" id="tool-brush" title="Kuas 🖌️">🖌️</button>
+                            <button class="tool-btn" id="tool-eraser" title="Penghapus 🧽">🧽</button>
+                            <button class="tool-btn" id="tool-fill" title="Cat Tumpah / Fill 🪣">🪣</button>
+                        </div>
+                        <!-- Brush Size -->
+                        <div class="toolbar-section brush-size-wrap">
+                            <span>⬤</span>
+                            <input type="range" id="brush-size" min="2" max="48" value="8" title="Ukuran Kuas">
+                            <span id="brush-size-label" style="font-size:0.78rem; color: var(--text-muted);">8px</span>
+                        </div>
+                        <div class="toolbar-divider"></div>
+                        <!-- Undo & Clear -->
+                        <button class="tool-btn" id="tool-undo" title="Batalkan Terakhir (Undo) ↩️" style="background:rgba(255,255,255,0.08);">↩️</button>
+                        <button class="tool-btn btn-clear" id="tool-clear" title="Hapus Kanvas">🗑️</button>
+                    </div>
+                </div>
+
+                <!-- Sidebar Column -->
+                <div class="sidebar-column">
+                    <!-- Leaderboard -->
+                    <div class="panel lb-panel">
+                        <div class="panel-header">🏆 Klasemen Skor</div>
+                        <div class="leaderboard-list" id="game-leaderboard"></div>
+                    </div>
+
+                    <!-- Chat & Guess -->
+                    <div class="panel chat-panel">
+                        <div class="panel-header">💬 Chat & Tebakan</div>
+                        <div class="chat-history" id="chat-history"></div>
+                        <form class="guess-form" id="guess-form" onsubmit="return false;">
+                            <input type="text" id="guess-input" placeholder="Ketik tebakanmu di sini..." autocomplete="off" maxlength="40">
+                            <button type="submit" class="btn-send-guess">Kirim</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Turn End Banner -->
+        <div class="turn-banner" id="turn-banner">
+            <div class="turn-banner-icon">⏱️</div>
+            <div class="turn-banner-title">GILIRAN SELESAI!</div>
+            <div class="turn-banner-word" id="turn-banner-word"></div>
+        </div>
+    </div>
+
+    <!-- ─── SCREEN 4: GAME OVER ─── -->
+    <div id="screen-gameover" class="screen">
+        <div class="gameover-card">
+            <span class="gameover-icon">🎉</span>
+            <h1 class="gameover-title">GAME OVER!</h1>
+            <p class="gameover-sub">Juara Terbaik Sesi Ini:</p>
+            <div class="podium-top3" id="gameover-top3"></div>
+            <div class="podium-others" id="gameover-others"></div>
+        </div>
+    </div>
+
+    <!-- ─── CUSTOM POPUP MODAL ─── -->
+    <div id="custom-modal-overlay" class="modal-overlay">
+        <div class="modal-card custom-dialog-card">
+            <span class="modal-icon" id="custom-modal-icon">✨</span>
+            <h3 class="modal-title" id="custom-modal-title">Judul</h3>
+            <p class="modal-desc" id="custom-modal-desc">Deskripsi pesan pop up</p>
+            <div class="custom-modal-buttons">
+                <button class="btn-modal-cancel" id="custom-modal-cancel" style="display:none;">Batal</button>
+                <button class="btn-modal-confirm" id="custom-modal-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/draw.js"></script>
+</body>
+</html>
