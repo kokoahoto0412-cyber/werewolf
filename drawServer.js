@@ -389,6 +389,10 @@ function endGame(io, game) {
     winners: sorted,
     players: game.players
   });
+  // Auto-delete session 30 detik setelah game selesai
+  setTimeout(() => {
+    drawSessions.delete(game.sessionId);
+  }, 30000);
 }
 
 function attach(app, io) {
