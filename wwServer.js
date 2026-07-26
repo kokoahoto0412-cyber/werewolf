@@ -796,7 +796,7 @@ async function resolveNight(game) {
     if (killedId && game.alive.includes(killedId)) {
         if (!isDocProtected && !isBgProtected) {
             if (game.roles[killedId]==='Cursed') {
-                game.roles[killedId]='Werewolf'; game.players.find(p=>p.id===killedId).role='Werewolf';
+                game.roles[killedId]='Werewolf'; const cP = game.players.find(p=>p.id===killedId); if (cP) cP.role='Werewolf';
                 send(pSock(game,killedId), 'curse_transform', {});
                 deathList.push({type:'info', text:'🐺 Terdengar lolongan aneh... tidak ada korban pagi ini!'});
             } else if (['Corruptor', 'Arsonist', 'Shapeshifter'].includes(game.roles[killedId])) {
