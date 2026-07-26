@@ -7,7 +7,7 @@ const BOARD_TILES = [
   { id: 2, name: 'Dana Umum', type: 'chest' },
   { id: 3, name: 'Malaysia', type: 'property', group: 'brown', price: 60, rent: [4, 20, 60, 180, 320, 450], housePrice: 50 },
   { id: 4, name: 'Pajak Bandara', type: 'tax', amount: 200, desc: 'Bayar Pajak Bandara $200' },
-  { id: 5, name: 'Bandara Soetta', type: 'railway', price: 200, rent: [25, 50, 100, 200] },
+  { id: 5, name: 'Bandara Soetta', type: 'railway', price: 200, rent: [25, 50, 75, 100] },
   { id: 6, name: 'Singapura', type: 'property', group: 'lightblue', price: 100, rent: [6, 30, 90, 270, 400, 550], housePrice: 50 },
   { id: 7, name: 'Kesempatan', type: 'chance' },
   { id: 8, name: 'Thailand', type: 'property', group: 'lightblue', price: 100, rent: [6, 30, 90, 270, 400, 550], housePrice: 50 },
@@ -17,7 +17,7 @@ const BOARD_TILES = [
   { id: 12, name: 'PLN (Listrik)', type: 'utility', price: 150, desc: 'Sewa: 4x Dadu (1 utilitas) / 10x Dadu (2 utilitas)' },
   { id: 13, name: 'India', type: 'property', group: 'pink', price: 140, rent: [10, 50, 150, 450, 625, 750], housePrice: 100 },
   { id: 14, name: 'Korea Selatan', type: 'property', group: 'pink', price: 160, rent: [12, 60, 180, 500, 700, 900], housePrice: 100 },
-  { id: 15, name: 'Bandara Changi', type: 'railway', price: 200, rent: [25, 50, 100, 200] },
+  { id: 15, name: 'Bandara Changi', type: 'railway', price: 200, rent: [25, 50, 75, 100] },
   { id: 16, name: 'Mesir', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], housePrice: 100 },
   { id: 17, name: 'Dana Umum', type: 'chest' },
   { id: 18, name: 'Arab Saudi', type: 'property', group: 'orange', price: 180, rent: [14, 70, 200, 550, 750, 950], housePrice: 100 },
@@ -27,7 +27,7 @@ const BOARD_TILES = [
   { id: 22, name: 'Kesempatan', type: 'chance' },
   { id: 23, name: 'Italia', type: 'property', group: 'red', price: 220, rent: [18, 90, 250, 700, 875, 1050], housePrice: 150 },
   { id: 24, name: 'Spanyol', type: 'property', group: 'red', price: 240, rent: [20, 100, 300, 750, 925, 1100], housePrice: 150 },
-  { id: 25, name: 'Bandara Dubai', type: 'railway', price: 200, rent: [25, 50, 100, 200] },
+  { id: 25, name: 'Bandara Dubai', type: 'railway', price: 200, rent: [25, 50, 75, 100] },
   { id: 26, name: 'Brasil', type: 'property', group: 'yellow', price: 260, rent: [22, 110, 330, 800, 975, 1150], housePrice: 150 },
   { id: 27, name: 'Argentina', type: 'property', group: 'yellow', price: 260, rent: [22, 110, 330, 800, 975, 1150], housePrice: 150 },
   { id: 28, name: 'PAM (Air Bersih)', type: 'utility', price: 150, desc: 'Sewa: 4x Dadu / 10x Dadu' },
@@ -37,7 +37,7 @@ const BOARD_TILES = [
   { id: 32, name: 'Jerman', type: 'property', group: 'green', price: 300, rent: [26, 130, 390, 900, 1100, 1275], housePrice: 200 },
   { id: 33, name: 'Dana Umum', type: 'chest' },
   { id: 34, name: 'Prancis', type: 'property', group: 'green', price: 320, rent: [28, 150, 450, 1000, 1200, 1400], housePrice: 200 },
-  { id: 35, name: 'Bandara Heathrow', type: 'railway', price: 200, rent: [25, 50, 100, 200] },
+  { id: 35, name: 'Bandara Heathrow', type: 'railway', price: 200, rent: [25, 50, 75, 100] },
   { id: 36, name: 'Kesempatan', type: 'chance' },
   { id: 37, name: 'Jepang', type: 'property', group: 'darkblue', price: 350, rent: [35, 175, 500, 1100, 1300, 1500], housePrice: 200 },
   { id: 38, name: 'Pajak Mewah', type: 'tax', amount: 100, desc: 'Bayar Pajak Barang Mewah $100' },
@@ -701,7 +701,7 @@ function handleTileLanding(game, io, p) {
         }
       } else if (tile.type === 'railway') {
         const rrCount = Object.keys(owner.properties).filter(id => BOARD_TILES[id] && BOARD_TILES[id].type === 'railway').length;
-        rentAmount = tile.rent[Math.max(0, rrCount - 1)];
+        rentAmount = 25 * Math.min(4, Math.max(1, rrCount));
       } else if (tile.type === 'utility') {
         const utCount = Object.keys(owner.properties).filter(id => BOARD_TILES[id] && BOARD_TILES[id].type === 'utility').length;
         const mult = utCount >= 2 ? 10 : 4;

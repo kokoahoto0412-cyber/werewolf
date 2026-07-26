@@ -372,7 +372,7 @@ function endTurn(io, game, reason) {
   bcast(io, game.sessionId, 'turn_end', {
     reason,
     word: game.currentWord,
-    players: game.players
+    players: getPublicPlayers(game)
   });
 
   game.turnIndex++;
@@ -386,13 +386,9 @@ function endGame(io, game) {
   game.phase = 'game_over';
   const sorted = [...game.players].sort((a, b) => b.score - a.score);
   bcast(io, game.sessionId, 'game_over', {
-    winners: sorted,
-    players: game.players
+    winners: sorted.filter(p => !p.isSpectator),
+    players: getPublicPlayers(game)
   });
-  // Auto-delete session 30 detik setelah game selesai
-  setTimeout(() => {
-    drawSessions.delete(game.sessionId);
-  }, 30000);
 }
 
 function attach(app, io) {
@@ -455,6 +451,7 @@ function attach(app, io) {
         } catch(e) {}
       }
 
+      const isOwnerSpec = OWNER_IDS.includes(discordId) && (game.phase !== 'lobby' || getPublicPlayers(game).length >= 10);
       let p = game.players.find(x => x.id === discordId || x.name.toLowerCase() === name.toLowerCase());
       if (!p) {
         p = {
@@ -462,12 +459,14 @@ function attach(app, io) {
           name: name || 'Gamer',
           avatar: finalAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}`,
           score: 0,
-          isHost: (discordId === game.hostId || game.players.length === 0)
+          isHost: (discordId === game.hostId || game.players.length === 0),
+          isSpectator: isOwnerSpec
         };
         game.players.push(p);
       } else {
         if (name) p.name = name;
         if (finalAvatar) p.avatar = finalAvatar;
+        if (isOwnerSpec) p.isSpectator = true;
       }
       p.socketId = socket.id;
       socket.join(sessionId);
@@ -477,7 +476,7 @@ function attach(app, io) {
         phase: game.phase,
         category: game.category,
         categories: Object.keys(WORD_CATEGORIES),
-        players: game.players,
+        players: getPublicPlayers(game),
         hostId: game.hostId,
         myId: discordId,
         round: game.round,
@@ -487,7 +486,7 @@ function attach(app, io) {
         drawHistory: game.drawHistory
       });
 
-      bcast(io, sessionId, 'players_update', { players: game.players });
+      bcast(io, sessionId, 'players_update', { players: getPublicPlayers(game) });
     });
 
     socket.on('draw_select_category', ({ sessionId, category }) => {
@@ -590,11 +589,11 @@ function attach(app, io) {
           playerId: discordId,
           playerName: player.name,
           points,
-          players: game.players
+          players: getPublicPlayers(game)
         });
 
         // Check if all guessers got it
-        const nonDrawers = game.players.filter(p => p.id !== game.currentDrawerId);
+        const nonDrawers = getPublicPlayers(game).filter(p => p.id !== game.currentDrawerId);
         if (game.guessedPlayers.size >= nonDrawers.length) {
           endTurn(io, game, `Semua pemain berhasil menebak! Kata: ${game.currentWord}`);
         }

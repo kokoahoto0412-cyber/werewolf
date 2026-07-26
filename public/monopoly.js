@@ -1140,16 +1140,23 @@ function showTileDetail(tile, autoOpenMobile = false) {
         <div style="font-weight:700;font-size:0.9rem;margin-bottom:4px;">${tile.name}</div>
         ${tile.price ? `<div style="color:var(--green);font-weight:700;font-size:0.85rem;margin-bottom:6px;">Harga: $${tile.price}</div>` : ''}
         ${owner ? `<div style="font-size:0.74rem;color:var(--gold);margin-bottom:8px;">Pemilik: ${owner.token} ${owner.name} ${hasSet ? '<span style="color:#ff5555;font-weight:800;">(1 Set! Sewa x2)</span>' : ''}</div>` : ''}
-        ${tile.rent ? `
+        ${tile.type === 'railway' ? `
             <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;font-size:0.73rem;color:var(--text-dim);">
-                <div style="margin-bottom:2px; ${hasSet ? 'color:#ffaa00;font-weight:700;' : ''}">Sewa Dasar ${hasSet ? '(x2)' : ''}: $${tile.rent[0] * mult}</div>
-                <div style="margin-bottom:2px;">1 Rumah: $${tile.rent[1] * mult}</div>
-                <div style="margin-bottom:2px;">2 Rumah: $${tile.rent[2] * mult}</div>
-                <div style="margin-bottom:2px;">3 Rumah: $${tile.rent[3] * mult}</div>
-                <div style="margin-bottom:2px;">4 Rumah: $${tile.rent[4] * mult}</div>
-                <div style="color:var(--red);font-weight:700;">Hotel: $${tile.rent[5] * mult}</div>
+                <div style="margin-bottom:2px;">🛫 1 Bandara : $25 (Sewa x1)</div>
+                <div style="margin-bottom:2px;">🛫 2 Bandara : $50 (Sewa x2)</div>
+                <div style="margin-bottom:2px;">🛫 3 Bandara : $75 (Sewa x3)</div>
+                <div style="color:var(--gold);font-weight:700;">🛫 4 Bandara : $100 (Sewa x4)</div>
             </div>
-        ` : tile.desc ? `<div style="font-size:0.78rem;color:var(--text-dim);line-height:1.5;">${tile.desc}</div>` : ''}
+        ` : (tile.type === 'property' && tile.rent ? `
+            <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:8px;font-size:0.73rem;color:var(--text-dim);">
+                <div style="margin-bottom:2px; ${hasSet ? 'color:#ffaa00;font-weight:700;' : ''}">Sewa Dasar ${hasSet ? '(x2)' : ''}: ${tile.rent[0] * mult}</div>
+                <div style="margin-bottom:2px;">1 Rumah: ${tile.rent[1] * mult}</div>
+                <div style="margin-bottom:2px;">2 Rumah: ${tile.rent[2] * mult}</div>
+                <div style="margin-bottom:2px;">3 Rumah: ${tile.rent[3] * mult}</div>
+                <div style="margin-bottom:2px;">4 Rumah: ${tile.rent[4] * mult}</div>
+                <div style="color:var(--red);font-weight:700;">Hotel: ${tile.rent[5] * mult}</div>
+            </div>
+        ` : tile.desc ? `<div style="font-size:0.78rem;color:var(--text-dim);line-height:1.5;">${tile.desc}</div>` : '')}
         ${actionHtml}
     `;
 

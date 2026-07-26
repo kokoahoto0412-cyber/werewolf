@@ -1200,7 +1200,7 @@ io.on('connection', socket => {
         }
 
         if (game.phase !== 'lobby' && OWNER_IDS.includes(discordId)) {
-            game.players.push({socketId:socket.id,id:discordId,name:`👑 [OWNER] ${name.substring(0,10)}`,avatar:finalAvatar||'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',role:'Spectator',alive:false});
+            game.players.push({socketId:socket.id,id:discordId,name:name,avatar:finalAvatar||'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',role:'Spectator',alive:false});
             game.roles[discordId] = 'Spectator';
             socket.join(sessionId);
             socket.emit('game_started', { playerCount: game.players.length });
