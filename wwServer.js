@@ -1289,7 +1289,7 @@ io.on('connection', socket => {
             if (totalWw < 1) return socket.emit('error',{message:'Minimal 1 Random Werewolf!'});
         } else {
             const rs = game.roleSettings;
-            totalWw = (rs.ww||0) + (rs.nw||0) + (rs.jw||0) + (rs.bw||0) + (rs.cw||0) + (rs.pw||0) + (rs.sw||0);
+            totalWw = (rs.ww||0) + (rs.nw||0) + (rs.jw||0) + (rs.bw||0) + (rs.cw||0) + (rs.pw||0) + (rs.sw||0) + (rs.ws||0) + (rs.wolfen||0);
             totalSpecial = Object.values(rs).reduce((a,b)=>a+b,0);
             if (totalWw < 1) return socket.emit('error',{message:'Minimal harus ada 1 Serigala!'});
         }
